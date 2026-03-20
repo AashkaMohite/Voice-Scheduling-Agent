@@ -1,0 +1,23 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+from calendar_utils import create_event
+
+app = FastAPI()
+
+class EventRequest(BaseModel):
+    name: str
+    datetime: str
+    title: str = None
+
+@app.get("/")
+def home():
+    return {"message": "Voice Scheduler API is running"}
+
+@app.post("/create-event")
+def schedule_event(req: EventRequest):
+    link = create_event(req.name, req.datetime, req.title)
+    
+    return {
+        "status": "success",
+        "event_link": link
+    }
