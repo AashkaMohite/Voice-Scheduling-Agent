@@ -5,6 +5,7 @@ import os
 from dateutil import parser
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
@@ -17,8 +18,12 @@ def authenticate():
     token_data = json.loads(token_str)
     creds = Credentials.from_authorized_user_info(token_data, SCOPES)
 
+    # If expired but refresh token exists, refresh automatically
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+
     if not creds or not creds.valid:
-        raise ValueError("Stored Google token is invalid or expired")
+        raise ValueError("Google credentials are invalid and could not be refreshed")
 
     return creds
 
