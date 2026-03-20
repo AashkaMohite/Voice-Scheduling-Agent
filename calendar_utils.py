@@ -18,7 +18,6 @@ def authenticate():
     token_data = json.loads(token_str)
     creds = Credentials.from_authorized_user_info(token_data, SCOPES)
 
-    # If expired but refresh token exists, refresh automatically
     if creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
 
@@ -28,11 +27,23 @@ def authenticate():
     return creds
 
 
+def parse_meeting_time(datetime_str: str) -> datetime.datetime:
+    cleaned = datetime_str.strip()
+
+    # First try standard parsing
+    try:
+        return parser.parse(cleaned, fuzzy=True)
+    except Exception:
+        pass
+
+    raise ValueError(f"Could not parse datetime: {datetime_str}")
+
+
 def create_event(name, datetime_str, title=None):
     creds = authenticate()
     service = build("calendar", "v3", credentials=creds)
 
-    start_time = parser.parse(datetime_str)
+    start_time = parse_meeting_time(datetime_str)
     end_time = start_time + datetime.timedelta(hours=1)
 
     event = {

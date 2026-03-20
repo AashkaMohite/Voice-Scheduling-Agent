@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from calendar_utils import create_event
 
@@ -15,9 +15,11 @@ def home():
 
 @app.post("/create-event")
 def schedule_event(req: EventRequest):
-    link = create_event(req.name, req.datetime, req.title)
-    
-    return {
-        "status": "success",
-        "event_link": link
-    }
+    try:
+        link = create_event(req.name, req.datetime, req.title)
+        return {
+            "status": "success",
+            "event_link": link
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
