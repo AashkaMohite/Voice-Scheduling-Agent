@@ -68,6 +68,9 @@ def create_event(
 
     description = "\n".join(description_parts)
 
+    print("AGENDA RECEIVED:", agenda)
+    print("DESCRIPTION:", description)
+
     event = {
         "summary": meeting_title,
         "description": description,
