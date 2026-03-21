@@ -27,27 +27,50 @@ def authenticate():
     return creds
 
 
-def parse_meeting_time(datetime_str: str) -> datetime.datetime:
-    cleaned = datetime_str.strip()
-
-    # First try standard parsing
-    try:
-        return parser.parse(cleaned, fuzzy=True)
-    except Exception:
-        pass
-
-    raise ValueError(f"Could not parse datetime: {datetime_str}")
-
-
-def create_event(name, datetime_str, title=None):
+def create_event(
+    name,
+    start_datetime,
+    attendee=None,
+    end_datetime=None,
+    duration_minutes=None,
+    title=None,
+    agenda=None,
+):
     creds = authenticate()
     service = build("calendar", "v3", credentials=creds)
 
-    start_time = parse_meeting_time(datetime_str)
-    end_time = start_time + datetime.timedelta(hours=1)
+    start_time = parser.parse(start_datetime)
+
+    if end_datetime:
+        end_time = parser.parse(end_datetime)
+    elif duration_minutes:
+        end_time = start_time + datetime.timedelta(minutes=duration_minutes)
+    else:
+        end_time = start_time + datetime.timedelta(hours=1)
+
+    if title:
+        meeting_title = title
+    elif attendee:
+        meeting_title = f"Meeting with {attendee}"
+    else:
+        meeting_title = f"Meeting scheduled by {name}"
+
+    description_parts = [f"Scheduled by: {name}"]
+
+    if attendee:
+        description_parts.append(f"Meeting with: {attendee}")
+
+    if agenda:
+        description_parts.append(f"Agenda: {agenda}")
+
+    if duration_minutes and not end_datetime:
+        description_parts.append(f"Duration: {duration_minutes} minutes")
+
+    description = "\n".join(description_parts)
 
     event = {
-        "summary": title if title else f"Meeting with {name}",
+        "summary": meeting_title,
+        "description": description,
         "start": {
             "dateTime": start_time.isoformat(),
             "timeZone": "America/Edmonton",
