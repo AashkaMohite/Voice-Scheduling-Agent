@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from calendar_utils import create_event
 from typing import Optional
@@ -19,20 +19,16 @@ def home():
     return {"message": "Voice Scheduler API is running"}
 
 @app.post("/create-event")
-async def schedule_event(request: Request):
-    body = await request.json()
-    print("RAW REQUEST FROM VAPI:", body)
+def schedule_event(req: EventRequest):
+    print("REQUEST:", req.dict())
 
     try:
-        req = EventRequest(**body)
-
-        start_value = req.start_datetime 
-        if not start_value:
+        if not req.start_datetime:
             raise HTTPException(status_code=422, detail="start_datetime missing")
 
         link = create_event(
             name=req.name,
-            start_datetime=start_value,
+            start_datetime=req.start_datetime,
             attendee=req.attendee,
             end_datetime=req.end_datetime,
             duration_minutes=req.duration_minutes,
@@ -42,6 +38,8 @@ async def schedule_event(request: Request):
 
         return {"status": "success", "event_link": link}
 
+    except HTTPException:
+        raise
     except Exception as e:
         print("❌ ERROR:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
